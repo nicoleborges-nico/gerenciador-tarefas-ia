@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerenciador de Tarefas com IA</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      .cabecalho {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .cabecalho img {
+        height: 120px;
+        width: auto;
+        border-radius: 8px;
+      }
+      .cabecalho h1 {
+        margin: 0;
+      }
+      body {
+        font-family: system-ui, sans-serif;
+        background: #f4f5f7;
+        margin: 0;
+        padding: 24px;
+        color: #1f2933;
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin-top: 0;
+      }
+      form {
+        display: grid;
+        gap: 8px;
+        background: #fff;
+        padding: 16px;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      input,
+      textarea {
+        padding: 10px;
+        border: 1px solid #cbd2d9;
+        border-radius: 6px;
+        font: inherit;
+      }
+      button {
+        padding: 10px 14px;
+        border: 0;
+        border-radius: 6px;
+        background: #3b5bdb;
+        color: #fff;
+        font: inherit;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #2f4ac0;
+      }
+      button.secundario {
+        background: #868e96;
+      }
+      button.perigo {
+        background: #e03131;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 20px 0;
+        display: grid;
+        gap: 10px;
+      }
+      li {
+        background: #fff;
+        padding: 12px 14px;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+      li.concluida .titulo {
+        text-decoration: line-through;
+        color: #868e96;
+      }
+      .titulo {
+        font-weight: 600;
+      }
+      .descricao {
+        font-size: 0.9rem;
+        color: #52606d;
+        margin-top: 2px;
+      }
+      .acoes {
+        display: flex;
+        gap: 6px;
+      }
+      .acoes button {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+      }
+      #resumo {
+        background: #fff;
+        border-left: 4px solid #3b5bdb;
+        padding: 14px 16px;
+        border-radius: 6px;
+        white-space: pre-wrap;
+        margin-top: 12px;
+        display: none;
+      }
+      #cabecalho-lista {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="cabecalho">
+        <img src="/imagens/logo.jpg" alt="Logo do gerenciador de tarefas" />
+        <h1>Minhas tarefas</h1>
+      </header>
+      <form id="form-tarefa">
+        <input
+          id="titulo"
+          placeholder="Título da tarefa"
+          required
+          maxlength="150"
+        />
+        <textarea
+          id="descricao"
+          placeholder="Descrição (opcional)"
+          rows="2"
+        ></textarea>
+        <button type="submit">Adicionar tarefa</button>
+      </form>
+
+      <div id="cabecalho-lista">
+        <h2>Lista</h2>
+        <button id="btn-resumo">Resumir meu dia</button>
+      </div>
+      <div id="resumo"></div>
+
+      <ul id="lista"></ul>
+    </main>
+
+    <script>
+      const lista = document.getElementById("lista");
+      const form = document.getElementById("form-tarefa");
+      const resumoBox = document.getElementById("resumo");
+      const btnResumo = document.getElementById("btn-resumo");
+
+      async function api(url, options) {
+        const res = await fetch(url, {
+          headers: { "Content-Type": "application/json" },
+          ...options,
+        });
+        if (res.status === 204) return null;
+        const dados = await res.json();
+        if (!res.ok) throw new Error(dados.erro || "Erro na requisição");
+        return dados;
+      }
+
+      function escapar(texto) {
+        const div = document.createElement("div");
+        div.textContent = texto ?? "";
+        return div.innerHTML;
+      }
+
+      async function carregar() {
+        const tarefas = await api("/tarefas");
+        lista.innerHTML = tarefas
+          .map(
+            (t) => `
+        <li class="${t.status}">
+          <div>
+            <div class="titulo">${escapar(t.titulo)}</div>
+            ${t.descricao ? `<div class="descricao">${escapar(t.descricao)}</div>` : ""}
+          </div>
+          <div class="acoes">
+            <button class="secundario" onclick="alternar(${t.id}, '${t.status}')">
+              ${t.status === "pendente" ? "Concluir" : "Reabrir"}
+            </button>
+            <button class="perigo" onclick="excluir(${t.id})">Excluir</button>
+          </div>
+        </li>`,
+          )
+          .join("");
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        try {
+          await api("/tarefas", {
+            method: "POST",
+            body: JSON.stringify({
+              titulo: document.getElementById("titulo").value,
+              descricao: document.getElementById("descricao").value,
+            }),
+          });
+          form.reset();
+          carregar();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      async function alternar(id, statusAtual) {
+        const novo = statusAtual === "pendente" ? "concluida" : "pendente";
+        await api(`/tarefas/${id}`, {
+          method: "PUT",
+          body: JSON.stringify({ status: novo }),
+        });
+        carregar();
+      }
+
+      async function excluir(id) {
+        if (!confirm("Excluir esta tarefa?")) return;
+        await api(`/tarefas/${id}`, { method: "DELETE" });
+        carregar();
+      }
+
+      btnResumo.addEventListener("click", async () => {
+        btnResumo.disabled = true;
+        btnResumo.textContent = "Pensando...";
+        resumoBox.style.display = "block";
+        resumoBox.textContent = "Gerando resumo...";
+        try {
+          const { resumo } = await api("/resumo", { method: "POST" });
+          resumoBox.textContent = resumo;
+        } catch (err) {
+          resumoBox.textContent = "Erro: " + err.message;
+        } finally {
+          btnResumo.disabled = false;
+          btnResumo.textContent = "Resumir meu dia";
+        }
+      });
+
+      carregar();
+    </script>
+  </body>
+</html>
