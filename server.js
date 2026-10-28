@@ -116,7 +116,7 @@ app.post("/resumo", async (req, res) => {
       )
       .join("\n");
 
-    // Modelo principal + modelo reserva opcional (definido no .env)
+    // Modelo principal
     const modelos = [process.env.AI_MODEL || "gemini-3.8-flash"];
     if (process.env.AI_MODEL_FALLBACK)
       modelos.push(process.env.AI_MODEL_FALLBACK);
