@@ -31,7 +31,7 @@ Aplicação full stack para gerenciar tarefas do dia a dia, com um botão que us
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/SEU_USUARIO/gerenciador-tarefas-ia.git
+git clone https://github.com/nicoleborges-nico/gerenciador-tarefas-ia.git
 cd gerenciador-tarefas-ia
 
 # 2. Instale as dependências
