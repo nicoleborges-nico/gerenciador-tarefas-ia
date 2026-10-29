@@ -1,7 +1,6 @@
 # Gerenciador de Tarefas com IA
 
-Aplicação full stack para gerenciar tarefas do dia a dia, com um botão que usa IA para sugerir prioridades e montar um plano para o dia com base nas tarefas pendentes.
-
+Aplicação full Stack para gerenciar tarefas, com uma função de IA que analisa as tarefas pendentes e sugere prioridades e um plano para o dia. 
 ![Tela principal do gerenciador de tarefas](imagens/print.png)
 
 ## Funcionalidades
